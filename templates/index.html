@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Enhancement Editor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Font (Inter) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Applying Inter font globally */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f7fafc; /* Light gray background */
+      }
+      /* Custom styles for a bit more polish */
+      .card {
+        background-color: white;
+        border-radius: 0.75rem; /* Rounded corners for cards */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+      }
+      .btn-primary {
+        background-color: #4f46e5; /* Indigo */
+        color: white;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .btn-primary:hover {
+        background-color: #4338ca;
+      }
+      .btn-success {
+        background-color: #10b981; /* Emerald */
+        color: white;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .btn-success:hover {
+        background-color: #059669;
+      }
+      .btn-outline-success {
+        color: #10b981;
+        border: 1px solid #10b981;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .btn-outline-success:hover {
+        background-color: #10b981;
+        color: white;
+      }
+      input[type="file"] {
+        border: 1px solid #d1d5db; /* Gray-300 */
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+      }
+      input[type="range"] {
+        accent-color: #4f46e5; /* Indigo for slider thumb */
+      }
+      .slider-label {
+        font-size: 0.875rem; /* Smaller label text */
+        color: #4b5563; /* Gray-600 */
+        margin-bottom: 0.25rem;
+      }
+      .enhanced-image-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 200px; /* Ensure placeholder has some height */
+        border: 2px dashed #d1d5db; /* Dashed border for placeholder */
+        border-radius: 0.75rem;
+        background-color: #f9fafb; /* Lighter gray background */
+        color: #6b7280; /* Gray-500 text */
+      }
+      /* Add a subtle loading spinner (optional, can be shown/hidden with JS) */
+      .loader {
+        border: 4px solid #f3f3f3; /* Light grey */
+        border-top: 4px solid #4f46e5; /* Indigo */
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto; /* Center loader if used alone */
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      /* Tooltip styles */
+      .tooltip-container {
+        position: relative;
+        display: inline-block;
+      }
+      .tooltip-text {
+        visibility: hidden;
+        width: max-content;
+        max-width: 200px;
+        background-color: #374151; /* Gray-700 */
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; /* Position above the element */
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.75rem;
+      }
+      .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-100 text-slate-800"
+    {%
+    if
+    filename
+    %}data-filename="{{ filename }}"
+    {%
+    endif
+    %}
+  >
+    <div class="container mx-auto py-8 px-4 max-w-5xl">
+      <header class="mb-8 text-center">
+        <h1 class="text-4xl font-bold text-indigo-600">
+          Image Enhancement Studio
+        </h1>
+        <p class="text-slate-600 mt-2">
+          Upload your image and use our tools to enhance it automatically or
+          with fine-tuned manual controls.
+        </p>
+      </header>
+
+      <!-- Upload Form -->
+      <section id="upload-section" class="mb-8 card p-6">
+        <h2 class="text-2xl font-semibold mb-4 text-slate-700">
+          1. Upload Your Image
+        </h2>
+        <form
+          method="POST"
+          enctype="multipart/form-data"
+          class="space-y-4 md:flex md:items-end md:space-y-0 md:space-x-4"
+        >
+          <div class="flex-grow">
+            <label
+              for="image-upload"
+              class="block text-sm font-medium text-slate-700 mb-1"
+              >Choose an image file:</label
+            >
+            <input
+              type="file"
+              name="image"
+              id="image-upload"
+              accept="image/*"
+              required
+              class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <p class="mt-1 text-xs text-slate-500">
+              Supported formats: JPG, PNG, GIF, etc.
+            </p>
+          </div>
+          <button type="submit" class="btn-primary w-full md:w-auto">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 inline-block mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Upload Image
+          </button>
+        </form>
+      </section>
+
+      {% if filename %}
+      <!-- Image Display and Controls -->
+      <section id="editor-section" class="space-y-8">
+        <!-- Image Previews -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="card p-4">
+            <h3 class="text-xl font-semibold mb-3 text-slate-700">
+              Original Image
+            </h3>
+            <img
+              src="{{ url_for('static', filename='uploads/' + filename) }}"
+              id="original-img"
+              alt="Original Uploaded Image"
+              class="w-full h-auto rounded-lg shadow-md border border-slate-200"
+            />
+          </div>
+          <div class="card p-4">
+            <h3 class="text-xl font-semibold mb-3 text-slate-700">
+              Enhanced Image
+            </h3>
+            <div
+              id="enhanced-image-container"
+              class="enhanced-image-placeholder"
+            >
+              <img
+                id="enhanced-img"
+                src=""
+                alt="Enhanced Image"
+                class="w-full h-auto rounded-lg shadow-md border border-slate-200"
+                style="display: none"
+              />
+              <span id="enhanced-img-placeholder-text"
+                >Preview will appear here</span
+              >
+            </div>
+            <!-- Loading Indicator (hidden by default) -->
+            <div
+              id="loading-indicator"
+              class="loader mt-4"
+              style="display: none"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Auto Enhance Button -->
+        <div class="card p-6">
+          <h2 class="text-2xl font-semibold mb-3 text-slate-700">
+            2. Quick Enhancement
+          </h2>
+          <div class="tooltip-container inline-block">
+            <button
+              class="btn-success w-full sm:w-auto"
+              id="btn-auto"
+              onclick="autoEnhance()"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 inline-block mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                />
+              </svg>
+              Auto Enhance Image
+            </button>
+            <span class="tooltip-text"
+              >Automatically adjust settings for a balanced enhancement. Good
+              for a quick improvement.</span
+            >
+          </div>
+          <p class="text-sm text-slate-500 mt-2">
+            Let our AI algorithms optimize your image with a single click.
+          </p>
+        </div>
+
+        <!-- Manual Controls -->
+        <div class="card p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-semibold text-slate-700">
+              3. Manual Fine-Tuning
+            </h2>
+            <button
+              id="reset-manual-controls"
+              class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Reset Controls
+            </button>
+          </div>
+          <p class="text-sm text-slate-500 mb-6">
+            Adjust the sliders below to precisely control different aspects of
+            the image enhancement. Hover over labels for more information.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+            <!-- Denoise Controls -->
+            <fieldset class="space-y-3 p-4 border border-slate-200 rounded-md">
+              <legend class="text-lg font-medium text-slate-600 px-1">
+                Denoise
+              </legend>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="sigma_space" class="slider-label block"
+                    >Spatial Sigma (σ_space)</label
+                  >
+                  <span class="tooltip-text"
+                    >Controls the spatial extent of the bilateral filter. Higher
+                    values mean more pixels are included in the averaging,
+                    leading to stronger smoothing but potentially blurring
+                    details.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  id="sigma_space"
+                  value="3"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="sigma_space_value"
+                  >3</span
+                >
+              </div>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="sigma_color" class="slider-label block"
+                    >Color Sigma (σ_color)</label
+                  >
+                  <span class="tooltip-text"
+                    >Controls the color similarity for the bilateral filter.
+                    Higher values mean a wider range of colors will be averaged,
+                    leading to stronger smoothing of color variations.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="10"
+                  max="150"
+                  step="5"
+                  id="sigma_color"
+                  value="60"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="sigma_color_value"
+                  >60</span
+                >
+              </div>
+            </fieldset>
+
+            <!-- White Balance Controls -->
+            <fieldset class="space-y-3 p-4 border border-slate-200 rounded-md">
+              <legend class="text-lg font-medium text-slate-600 px-1">
+                White Balance
+              </legend>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="r_gain" class="slider-label block"
+                    >Red Gain</label
+                  >
+                  <span class="tooltip-text"
+                    >Adjusts the intensity of the red channel. Increase to make
+                    the image warmer, decrease to make it cooler.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0.5"
+                  max="2"
+                  step="0.05"
+                  id="r_gain"
+                  value="1.0"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="r_gain_value"
+                  >1.0</span
+                >
+              </div>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="g_gain" class="slider-label block"
+                    >Green Gain</label
+                  >
+                  <span class="tooltip-text"
+                    >Adjusts the intensity of the green channel.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0.5"
+                  max="2"
+                  step="0.05"
+                  id="g_gain"
+                  value="1.0"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="g_gain_value"
+                  >1.0</span
+                >
+              </div>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="b_gain" class="slider-label block"
+                    >Blue Gain</label
+                  >
+                  <span class="tooltip-text"
+                    >Adjusts the intensity of the blue channel. Increase to make
+                    the image cooler, decrease to make it warmer.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0.5"
+                  max="2"
+                  step="0.05"
+                  id="b_gain"
+                  value="1.0"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="b_gain_value"
+                  >1.0</span
+                >
+              </div>
+            </fieldset>
+
+            <!-- Contrast (CLAHE) Controls -->
+            <fieldset class="space-y-3 p-4 border border-slate-200 rounded-md">
+              <legend class="text-lg font-medium text-slate-600 px-1">
+                Contrast (CLAHE)
+              </legend>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="clip_limit" class="slider-label block"
+                    >Clip Limit</label
+                  >
+                  <span class="tooltip-text"
+                    >Sets the contrast limiting threshold for CLAHE. Higher
+                    values increase local contrast more aggressively.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  id="clip_limit"
+                  value="2.0"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="clip_limit_value"
+                  >2.0</span
+                >
+              </div>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="tile_grid" class="slider-label block"
+                    >Tile Grid Size</label
+                  >
+                  <span class="tooltip-text"
+                    >Defines the size of the grid for histogram equalization in
+                    CLAHE. Smaller tiles can lead to more localized contrast
+                    enhancement.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="4"
+                  max="16"
+                  step="1"
+                  id="tile_grid"
+                  value="8"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="tile_grid_value"
+                  >8</span
+                >
+              </div>
+            </fieldset>
+
+            <!-- Saturation Control -->
+            <fieldset class="space-y-3 p-4 border border-slate-200 rounded-md">
+              <legend class="text-lg font-medium text-slate-600 px-1">
+                Saturation
+              </legend>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="saturation" class="slider-label block"
+                    >Saturation Level</label
+                  >
+                  <span class="tooltip-text"
+                    >Adjusts the intensity of colors. Higher values make colors
+                    more vivid, lower values make them more muted (1.0 is
+                    original).</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0.1"
+                  max="2.0"
+                  step="0.05"
+                  id="saturation"
+                  value="1.1"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="saturation_value"
+                  >1.1</span
+                >
+              </div>
+            </fieldset>
+
+            <!-- Sharpen Controls -->
+            <fieldset class="space-y-3 p-4 border border-slate-200 rounded-md">
+              <legend class="text-lg font-medium text-slate-600 px-1">
+                Sharpen (Unsharp Mask)
+              </legend>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="sharpen_radius" class="slider-label block"
+                    >Radius</label
+                  >
+                  <span class="tooltip-text"
+                    >Determines the size of the area around edges affected by
+                    sharpening. Larger radius means a wider area.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0.5"
+                  max="5"
+                  step="0.1"
+                  id="sharpen_radius"
+                  value="1.0"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="sharpen_radius_value"
+                  >1.0</span
+                >
+              </div>
+              <div>
+                <div class="tooltip-container w-full">
+                  <label for="sharpen_amount" class="slider-label block"
+                    >Amount (%)</label
+                  >
+                  <span class="tooltip-text"
+                    >Controls the strength of the sharpening effect. Higher
+                    percentage means more pronounced edges.</span
+                  >
+                </div>
+                <input
+                  type="range"
+                  class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  min="0"
+                  max="200"
+                  step="10"
+                  id="sharpen_amount"
+                  value="100"
+                />
+                <span
+                  class="text-xs text-slate-500 float-right"
+                  id="sharpen_amount_value"
+                  >100</span
+                >
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="mt-8 text-center">
+            <button
+              class="btn-primary w-full sm:w-auto"
+              onclick="manualEnhance()"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 inline-block mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Apply Manual Enhancements
+            </button>
+          </div>
+        </div>
+
+        <!-- Download Section -->
+        <div class="card p-6 text-center">
+          <h2 class="text-2xl font-semibold mb-4 text-slate-700">
+            4. Download Your Masterpiece
+          </h2>
+          <a
+            id="download-link"
+            href="#"
+            class="btn-outline-success inline-block"
+            style="display: none"
+            download
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 inline-block mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Download Enhanced Image
+          </a>
+          <p id="download-hint" class="text-sm text-slate-500 mt-2">
+            The download button will appear here once an image is enhanced.
+          </p>
+        </div>
+      </section>
+      {% endif %}
+
+      <footer class="text-center mt-12 py-4 border-t border-slate-200">
+        <p class="text-sm text-slate-500">
+          &copy; <span id="current-year"></span> Image Enhancement Studio. All
+          rights reserved.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      // Ensure filename is correctly passed from Flask/Jinja2 or set to null if not available
+      const filename = document.body.dataset.filename || null;
+
+      // DOM Elements
+      const enhancedImg = document.getElementById("enhanced-img");
+      const enhancedImgPlaceholderText = document.getElementById(
+        "enhanced-img-placeholder-text"
+      );
+      const downloadLink = document.getElementById("download-link");
+      const downloadHint = document.getElementById("download-hint");
+      const loadingIndicator = document.getElementById("loading-indicator");
+      const resetManualControlsButton = document.getElementById(
+        "reset-manual-controls"
+      );
+
+      // Initial default values for sliders (matching HTML)
+      const defaultSliderValues = {
+        sigma_space: "3",
+        sigma_color: "60",
+        r_gain: "1.0",
+        g_gain: "1.0",
+        b_gain: "1.0",
+        clip_limit: "2.0",
+        tile_grid: "8",
+        saturation: "1.1",
+        sharpen_radius: "1.0",
+        sharpen_amount: "100",
+      };
+
+      // Function to show loading state
+      function showLoading() {
+        if (loadingIndicator) loadingIndicator.style.display = "block";
+        if (enhancedImg) enhancedImg.style.display = "none";
+        if (enhancedImgPlaceholderText)
+          enhancedImgPlaceholderText.textContent = "Processing...";
+      }
+
+      // Function to hide loading state
+      function hideLoading() {
+        if (loadingIndicator) loadingIndicator.style.display = "none";
+      }
+
+      function autoEnhance() {
+        if (!filename) {
+          console.error("No filename available for auto enhancement.");
+          // Optionally, display a user-friendly message here
+          return;
+        }
+        showLoading();
+        fetch("/auto_enhance", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `filename=${filename}`,
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (data.filename) {
+              showResult(data.filename);
+            } else {
+              console.error(
+                "Auto enhance error:",
+                data.error || "Unknown error"
+              );
+              if (enhancedImgPlaceholderText)
+                enhancedImgPlaceholderText.textContent =
+                  "Error enhancing image.";
+            }
+          })
+          .catch((error) => {
+            console.error("Fetch error during auto enhance:", error);
+            if (enhancedImgPlaceholderText)
+              enhancedImgPlaceholderText.textContent =
+                "Error: Could not connect to server.";
+          })
+          .finally(() => {
+            hideLoading();
+          });
+      }
+
+      function manualEnhance() {
+        if (!filename) {
+          console.error("No filename available for manual enhancement.");
+          return;
+        }
+        showLoading();
+        const params = {
+          filename,
+          sigma_space: document.getElementById("sigma_space").value,
+          sigma_color: document.getElementById("sigma_color").value,
+          r_gain: document.getElementById("r_gain").value,
+          g_gain: document.getElementById("g_gain").value,
+          b_gain: document.getElementById("b_gain").value,
+          clip_limit: document.getElementById("clip_limit").value,
+          tile_grid: document.getElementById("tile_grid").value,
+          saturation: document.getElementById("saturation").value,
+          sharpen_radius: document.getElementById("sharpen_radius").value,
+          sharpen_amount: document.getElementById("sharpen_amount").value,
+        };
+
+        fetch("/manual_enhance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (data.filename) {
+              showResult(data.filename);
+            } else {
+              console.error(
+                "Manual enhance error:",
+                data.error || "Unknown error"
+              );
+              if (enhancedImgPlaceholderText)
+                enhancedImgPlaceholderText.textContent =
+                  "Error enhancing image.";
+            }
+          })
+          .catch((error) => {
+            console.error("Fetch error during manual enhance:", error);
+            if (enhancedImgPlaceholderText)
+              enhancedImgPlaceholderText.textContent =
+                "Error: Could not connect to server.";
+          })
+          .finally(() => {
+            hideLoading();
+          });
+      }
+
+      function showResult(newFilename) {
+        const path = `/static/uploads/${newFilename}?t=${new Date().getTime()}`; // Cache buster
+        if (enhancedImg) {
+          enhancedImg.src = path;
+          enhancedImg.style.display = "block";
+        }
+        if (enhancedImgPlaceholderText) {
+          enhancedImgPlaceholderText.style.display = "none";
+        }
+        if (downloadLink) {
+          downloadLink.href = `/download/${newFilename}`;
+          downloadLink.style.display = "inline-block";
+        }
+        if (downloadHint) {
+          downloadHint.style.display = "none";
+        }
+      }
+
+      // Update slider value display and add event listeners
+      function setupSliderListeners() {
+        const sliders = [
+          "sigma_space",
+          "sigma_color",
+          "r_gain",
+          "g_gain",
+          "b_gain",
+          "clip_limit",
+          "tile_grid",
+          "saturation",
+          "sharpen_radius",
+          "sharpen_amount",
+        ];
+        sliders.forEach((id) => {
+          const slider = document.getElementById(id);
+          const valueDisplay = document.getElementById(`${id}_value`);
+          if (slider && valueDisplay) {
+            // Set initial display value
+            valueDisplay.textContent = slider.value;
+            // Update display on input
+            slider.addEventListener("input", () => {
+              valueDisplay.textContent = slider.value;
+            });
+          }
+        });
+      }
+
+      // Reset manual controls to default values
+      function resetControls() {
+        for (const id in defaultSliderValues) {
+          const slider = document.getElementById(id);
+          const valueDisplay = document.getElementById(`${id}_value`);
+          if (slider) {
+            slider.value = defaultSliderValues[id];
+          }
+          if (valueDisplay) {
+            valueDisplay.textContent = defaultSliderValues[id];
+          }
+        }
+        // Optionally, you might want to clear the enhanced image or re-apply with default settings
+        // For now, it just resets the sliders.
+        console.log("Manual controls reset to default values.");
+      }
+
+      // Set current year in footer
+      document.getElementById("current-year").textContent =
+        new Date().getFullYear();
+
+      // Event Listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        if (filename) {
+          // Only setup sliders if an image has been uploaded
+          setupSliderListeners();
+          if (resetManualControlsButton) {
+            resetManualControlsButton.addEventListener("click", resetControls);
+          }
+        }
+
+        // If there's a filename in the URL (e.g. after upload and redirect),
+        // and an enhanced image was previously generated for this session,
+        // try to load it. This part is tricky without server-side session state
+        // for the enhanced image name. The current `showResult` is client-side.
+        // For simplicity, we'll assume the enhanced image is cleared on page load
+        // unless the server specifically provides the enhanced image name.
+        // The current logic only shows enhanced image after an action (auto/manual enhance).
+      });
+
+      // Handle image upload preview (optional, client-side only)
+      const imageUploadInput = document.getElementById("image-upload");
+      if (imageUploadInput) {
+        imageUploadInput.addEventListener("change", function (event) {
+          if (event.target.files && event.target.files[0]) {
+            // This part is tricky because the 'original-img' is set by Flask after upload.
+            // To show a client-side preview BEFORE upload, you'd need a separate img tag.
+            // For now, we rely on Flask to display the original image post-upload.
+            console.log("File selected:", event.target.files[0].name);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
