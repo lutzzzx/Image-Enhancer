@@ -28,6 +28,17 @@ def save_image(image, suffix="enhanced"):
     cv2.imwrite(filepath, image)
     return filename
 
+def remove_all_enhanced_images():
+    """Hapus semua file *_auto.jpg dan *_manual.jpg dari folder upload"""
+    folder = app.config['UPLOAD_FOLDER']
+    for fname in os.listdir(folder):
+        if fname.endswith('_auto.jpg') or fname.endswith('_manual.jpg'):
+            try:
+                os.remove(os.path.join(folder, fname))
+                print(f"Deleted: {fname}")
+            except Exception as e:
+                print(f"Error deleting {fname}: {e}")
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -54,6 +65,8 @@ def auto_enhance_route():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img = cv2.imread(filepath)
 
+    remove_all_enhanced_images()  # 🔥 Hapus file lama dulu
+
     enhanced_img = auto_enhance(img)
     result_filename = save_image(enhanced_img, suffix="auto")
 
@@ -67,28 +80,21 @@ def manual_enhance_route():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img = cv2.imread(filepath)
 
-    # Ambil parameter manual
-    sigma_space = float(data.get('sigma_space', 3))
-    sigma_color = float(data.get('sigma_color', 60))
+    remove_all_enhanced_images()  # 🔥 Hapus file lama dulu
 
-    r_gain = float(data.get('r_gain', 1.0))
-    g_gain = float(data.get('g_gain', 1.0))
-    b_gain = float(data.get('b_gain', 1.0))
-
-    clip_limit = float(data.get('clip_limit', 2.0))
-    tile_grid = int(data.get('tile_grid', 8))
-
-    saturation_scale = float(data.get('saturation', 1.1))
-
-    sharpen_radius = float(data.get('sharpen_radius', 1.0))
-    sharpen_amount = float(data.get('sharpen_amount', 100))
-
-    # Jalankan fungsi manual enhancement
-    img = denoise_bilateral(img, sigma_space, sigma_color)
-    img = white_balance_grayworld(img, r_gain, g_gain, b_gain)
-    img = enhance_contrast_clahe(img, clip_limit, tile_grid)
-    img = enhance_saturation(img, saturation_scale)
-    img = unsharp_masking(img, radius=sharpen_radius, amount=sharpen_amount)
+    # Enhancement...
+    img = denoise_bilateral(img, float(data.get('sigma_space', 3)), float(data.get('sigma_color', 60)))
+    img = white_balance_grayworld(img,
+                                   float(data.get('r_gain', 1.0)),
+                                   float(data.get('g_gain', 1.0)),
+                                   float(data.get('b_gain', 1.0)))
+    img = enhance_contrast_clahe(img,
+                                  float(data.get('clip_limit', 2.0)),
+                                  int(data.get('tile_grid', 8)))
+    img = enhance_saturation(img, float(data.get('saturation', 1.1)))
+    img = unsharp_masking(img,
+                          radius=float(data.get('sharpen_radius', 1.0)),
+                          amount=float(data.get('sharpen_amount', 100)))
 
     result_filename = save_image(img, suffix="manual")
 
