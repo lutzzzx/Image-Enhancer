@@ -1,106 +1,96 @@
 import cv2
 import numpy as np
 from utils.analysis import (
-    is_noisy, get_noise_sigma,
+    estimate_noise,
     has_color_cast,
     is_low_contrast,
-    is_low_saturation,
-    needs_sharpening
+    is_blurry,
+    needs_saturation_boost
 )
 
-# === Helper Enhancement Functions ===
+def denoise_bilateral(img, sigma_space=3, sigma_color=60):
+    """Terapkan bilateral filter untuk denoising ringan"""
+    return cv2.bilateralFilter(img, d=9, sigmaColor=sigma_color, sigmaSpace=sigma_space)
 
-def denoise_image(img, sigma_space=3, sigma_color=60):
-    return cv2.bilateralFilter(img, d=0, sigmaColor=sigma_color, sigmaSpace=sigma_space)
-
-def non_local_means_denoise(img):
+def denoise_nlm(img):
+    """Terapkan Non-Local Means untuk noise berat"""
     return cv2.fastNlMeansDenoisingColored(img, None, 10, 10, 7, 21)
 
-def apply_gray_world(img):
-    avg_b, avg_g, avg_r = np.mean(img[:, :, 0]), np.mean(img[:, :, 1]), np.mean(img[:, :, 2])
-    avg_gray = (avg_r + avg_g + avg_b) / 3
-    scale = [avg_gray / avg_b, avg_gray / avg_g, avg_gray / avg_r]
-    result = cv2.merge([cv2.multiply(img[:, :, c], scale[c]) for c in range(3)])
+def white_balance_grayworld(img, r_gain=1.0, g_gain=1.0, b_gain=1.0):
+    """Koreksi white balance menggunakan Gray-World Assumption"""
+    b, g, r = cv2.split(img.astype(np.float32))
+    b *= b_gain
+    g *= g_gain
+    r *= r_gain
+    result = cv2.merge((b, g, r))
     return np.clip(result, 0, 255).astype(np.uint8)
 
-def apply_clahe(img, clip_limit=2.0, tile_grid_size=(8, 8)):
+def auto_white_balance_grayworld(img):
+    """Auto-koreksi white balance jika color cast terdeteksi"""
+    b, g, r = cv2.split(img.astype(np.float32))
+    avg_b, avg_g, avg_r = np.mean(b), np.mean(g), np.mean(r)
+    avg_gray = (avg_b + avg_g + avg_r) / 3
+    b_gain = avg_gray / avg_b
+    g_gain = avg_gray / avg_g
+    r_gain = avg_gray / avg_r
+    return white_balance_grayworld(img, r_gain, g_gain, b_gain)
+
+def enhance_contrast_clahe(img, clip_limit=2.0, tile_grid=8):
+    """Terapkan CLAHE pada channel L atau V (jika HSV)"""
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
-    l_clahe = clahe.apply(l)
-    merged = cv2.merge((l_clahe, a, b))
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_grid, tile_grid))
+    cl = clahe.apply(l)
+    merged = cv2.merge((cl, a, b))
     return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
 
-def increase_saturation(img, factor=1.2):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[:, :, 1] *= factor
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
-    return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+def enhance_contrast_histogram(img):
+    """Alternatif kontras: histogram equalization global (grayscale)"""
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    eq = cv2.equalizeHist(gray)
+    return cv2.cvtColor(eq, cv2.COLOR_GRAY2BGR)
 
-def sharpen_image(img, radius=1.0, amount=100):
-    blurred = cv2.GaussianBlur(img, (0, 0), radius)
-    sharpened = cv2.addWeighted(img, 1 + amount / 100.0, blurred, -amount / 100.0, 0)
+def enhance_saturation(img, scale=1.1):
+    """Tingkatkan saturasi pada channel HSV"""
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
+    h, s, v = cv2.split(hsv)
+    s *= scale
+    s = np.clip(s, 0, 255)
+    enhanced = cv2.merge((h, s, v))
+    return cv2.cvtColor(enhanced.astype(np.uint8), cv2.COLOR_HSV2BGR)
+
+def unsharp_masking(img, radius=1.0, amount=100):
+    """Terapkan penajaman dengan unsharp masking"""
+    blurred = cv2.GaussianBlur(img, (0, 0), sigmaX=radius)
+    sharpened = cv2.addWeighted(img, 1 + (amount / 100.0), blurred, -(amount / 100.0), 0)
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
-# === Automatic Enhancement ===
-
-def enhance_automatic(input_path, output_path):
-    img = cv2.imread(input_path)
-    sigma = get_noise_sigma(img)
+def auto_enhance(img):
+    """Enhancement otomatis berurutan: Denoising → WB → Kontras → Saturasi → Sharpen"""
+    result = img.copy()
 
     # 1. Denoising
-    if is_noisy(img, threshold=20):
-        if sigma > 25:
-            img = non_local_means_denoise(img)
+    noise_std = estimate_noise(result)
+    if noise_std > 10:
+        if noise_std > 25:
+            result = denoise_nlm(result)
         else:
-            img = denoise_image(img, sigma_space=3, sigma_color=2 * sigma)
+            result = denoise_bilateral(result, sigma_space=3, sigma_color=2*noise_std)
 
     # 2. White Balance
-    if has_color_cast(img, threshold=10):
-        img = apply_gray_world(img)
+    if has_color_cast(result):
+        result = auto_white_balance_grayworld(result)
 
-    # 3. Kontras / Tonality
-    if is_low_contrast(img, threshold=0.15):
-        img = apply_clahe(img, clip_limit=2.0, tile_grid_size=(8, 8))
+    # 3. Kontras
+    if is_low_contrast(result):
+        result = enhance_contrast_clahe(result, clip_limit=2.0, tile_grid=8)
 
     # 4. Saturasi
-    if is_low_saturation(img, threshold=0.25):
-        img = increase_saturation(img, factor=1.2)
+    if needs_saturation_boost(result):
+        result = enhance_saturation(result, scale=1.1)
 
     # 5. Sharpening
-    if needs_sharpening(img, threshold=50.0):
-        img = sharpen_image(img, radius=1.0, amount=100)
+    if is_blurry(result):
+        result = unsharp_masking(result, radius=1.0, amount=100)
 
-    cv2.imwrite(output_path, img)
-
-# === Manual Enhancement ===
-
-def enhance_manual(input_path, output_path, params):
-    img = cv2.imread(input_path)
-
-    # 1. Denoise
-    img = denoise_image(img, sigma_space=params['sigma_space'], sigma_color=params['sigma_color'])
-
-    # 2. White Balance
-    img = apply_white_balance_gain(img, params['r_gain'], params['g_gain'], params['b_gain'])
-
-    # 3. CLAHE
-    img = apply_clahe(img, clip_limit=params['clip_limit'],
-                      tile_grid_size=(params['tile_grid'], params['tile_grid']))
-
-    # 4. Saturation
-    img = increase_saturation(img, factor=params['saturation'])
-
-    # 5. Sharpening
-    img = sharpen_image(img, radius=params['sharpen_radius'], amount=params['sharpen_amount'])
-
-    cv2.imwrite(output_path, img)
-
-# === Manual White Balance Helper ===
-
-def apply_white_balance_gain(img, r_gain=1.0, g_gain=1.0, b_gain=1.0):
-    b, g, r = cv2.split(img)
-    b = np.clip(b * b_gain, 0, 255).astype(np.uint8)
-    g = np.clip(g * g_gain, 0, 255).astype(np.uint8)
-    r = np.clip(r * r_gain, 0, 255).astype(np.uint8)
-    return cv2.merge([b, g, r])
+    return result

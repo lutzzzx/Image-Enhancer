@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 import cv2
 import uuid
-from enhance import (
+from utils.enhance import (
     auto_enhance,
     denoise_bilateral,
     white_balance_grayworld,
