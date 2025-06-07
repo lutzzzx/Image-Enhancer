@@ -1,0 +1,115 @@
+/* Applying Inter font globally */
+body {
+  font-family: "Inter", sans-serif;
+  background-color: #f7fafc; /* Light gray background */
+}
+/* Custom styles for a bit more polish */
+.card {
+  background-color: white;
+  border-radius: 0.75rem; /* Rounded corners for cards */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+}
+.btn-primary {
+  background-color: #4f46e5; /* Indigo */
+  color: white;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-primary:hover {
+  background-color: #4338ca;
+}
+.btn-success {
+  background-color: #10b981; /* Emerald */
+  color: white;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+}
+.btn-success:hover {
+  background-color: #059669;
+}
+.btn-outline-success {
+  color: #10b981;
+  border: 1px solid #10b981;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.btn-outline-success:hover {
+  background-color: #10b981;
+  color: white;
+}
+input[type="file"] {
+  border: 1px solid #d1d5db; /* Gray-300 */
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+input[type="range"] {
+  accent-color: #4f46e5; /* Indigo for slider thumb */
+}
+.slider-label {
+  font-size: 0.875rem; /* Smaller label text */
+  color: #4b5563; /* Gray-600 */
+  margin-bottom: 0.25rem;
+}
+.enhanced-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px; /* Ensure placeholder has some height */
+  border: 2px dashed #d1d5db; /* Dashed border for placeholder */
+  border-radius: 0.75rem;
+  background-color: #f9fafb; /* Lighter gray background */
+  color: #6b7280; /* Gray-500 text */
+}
+/* Add a subtle loading spinner (optional, can be shown/hidden with JS) */
+.loader {
+  border: 4px solid #f3f3f3; /* Light grey */
+  border-top: 4px solid #4f46e5; /* Indigo */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto; /* Center loader if used alone */
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* Tooltip styles */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+.tooltip-text {
+  visibility: hidden;
+  width: max-content;
+  max-width: 200px;
+  background-color: #374151; /* Gray-700 */
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the element */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.75rem;
+}
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}

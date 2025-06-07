@@ -12,6 +12,9 @@ from utils.analysis import (
 
 def denoise_bilateral(img, sigma_space=3, sigma_color=60):
     """Terapkan bilateral filter untuk denoising ringan"""
+    if sigma_space <= 0 and sigma_color <= 0:
+        return img
+    
     return cv2.bilateralFilter(img, d=9, sigmaColor=sigma_color, sigmaSpace=sigma_space)
 
 def denoise_nlm(img):
@@ -39,6 +42,9 @@ def auto_white_balance_grayworld(img):
 
 def enhance_contrast_clahe(img, clip_limit=2.0, tile_grid=8):
     """Terapkan CLAHE pada channel L atau V (jika HSV)"""
+    if clip_limit <= 0:
+        return img
+    
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_grid, tile_grid))
@@ -63,6 +69,9 @@ def enhance_saturation(img, scale=1.1):
 
 def unsharp_masking(img, radius=1.0, amount=100):
     """Terapkan penajaman dengan unsharp masking"""
+    if radius <= 0.1 and amount <= 0:
+        return img
+    
     blurred = cv2.GaussianBlur(img, (0, 0), sigmaX=radius)
     sharpened = cv2.addWeighted(img, 1 + (amount / 100.0), blurred, -(amount / 100.0), 0)
     return np.clip(sharpened, 0, 255).astype(np.uint8)
@@ -80,7 +89,14 @@ def adaptive_denoise_bilateral(img, noise_std):
     else:
         d, sigma_color, sigma_space = 11, 90, 90
     
-    return cv2.bilateralFilter(img, d=d, sigmaColor=sigma_color, sigmaSpace=sigma_space)
+    filtered_img = cv2.bilateralFilter(img, d=d, sigmaColor=sigma_color, sigmaSpace=sigma_space)
+    params_used = {
+        'denoise_d': d,
+        'sigma_color': sigma_color,
+        'sigma_space': sigma_space
+    }
+    
+    return filtered_img, params_used
 
 def adaptive_denoise_nlm(img, noise_std):
     """Non-Local Means dengan parameter adaptif"""
@@ -136,7 +152,7 @@ def adaptive_white_balance(img, cast_info):
     r = np.clip(r, 0, 255).astype(np.float32)
     
     result = cv2.merge((b, g, r))
-    return result.astype(np.uint8)
+    return result.astype(np.uint8), {'r_gain': r_gain, 'g_gain': g_gain, 'b_gain': b_gain}
 
 def adaptive_contrast_clahe(img, contrast_info, brightness):
     """CLAHE dengan parameter adaptif"""
@@ -185,7 +201,8 @@ def adaptive_contrast_clahe(img, contrast_info, brightness):
     
     # Merge channels back
     merged = cv2.merge((cl, a, b))
-    return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
+    result_img = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
+    return result_img, {'clip_limit': clip_limit, 'tile_grid': tile_size}
 
 def adaptive_saturation_enhancement(img, sat_info):
     """Peningkatan saturasi adaptif"""
@@ -224,7 +241,8 @@ def adaptive_saturation_enhancement(img, sat_info):
     enhanced_hsv = cv2.merge((h, s_enhanced, v))
     enhanced_hsv = enhanced_hsv.astype(np.uint8)
     
-    return cv2.cvtColor(enhanced_hsv, cv2.COLOR_HSV2BGR)
+    result_img = cv2.cvtColor(enhanced_hsv, cv2.COLOR_HSV2BGR)
+    return result_img, {'saturation': scale}
 
 def adaptive_unsharp_masking(img, blur_info, noise_std):
     """Unsharp masking adaptif"""
@@ -265,13 +283,10 @@ def adaptive_unsharp_masking(img, blur_info, noise_std):
     sharpened = img_float + (amount / 100.0) * (img_float - blurred)
     
     # Clip and convert back to uint8
-    sharpened = np.clip(sharpened, 0, 255)
+    sharpened = np.clip(sharpened, 0, 255).astype(np.uint8)
     
-    return sharpened.astype(np.uint8)
+    return sharpened, {'sharpen_radius': radius, 'sharpen_amount': amount}
 
-    sharpened = cv2.addWeighted(img, 1 + (amount / 100.0), blurred, -(amount / 100.0), 0)
-    
-    return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 def gamma_correction_adaptive(img, brightness, dynamic_range_info):
     """Gamma correction adaptif berdasarkan brightness dan dynamic range"""
@@ -286,23 +301,24 @@ def gamma_correction_adaptive(img, brightness, dynamic_range_info):
         gamma = 1.2
     else:  # Normal
         return img
-    
+
     # Adjust gamma berdasarkan dynamic range
     dr_95 = dynamic_range_info['range_95']
     if dr_95 < 100:  # Low dynamic range
         gamma = gamma * 0.9  # Less aggressive correction
-    
+
     # Apply gamma correction
-    inv_gamma = 1.0 / gamma
-    table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
-    
+    table = np.array([((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+
     return cv2.LUT(img, table)
+
 
 def auto_enhance(img):
     """
     Enhancement otomatis dengan parameter adaptif penuh
     """
     result = img.copy()
+    params_used = {}
     
     try:
         # Analisis gambar
@@ -324,42 +340,48 @@ def auto_enhance(img):
         print(f"- Blur Severity: {blur_info['blur_severity']:.3f}")
         print("-" * 50)
         
-        # 1. Gamma Correction (jika diperlukan untuk brightness)
-        result = gamma_correction_adaptive(result, brightness, dynamic_range_info)
-        
-        # 2. Denoising
-        if noise_std > 8:
-            print(f"Applying denoising (noise_std: {noise_std:.2f})")
-            if noise_std > 25:
-                result = adaptive_denoise_nlm(result, noise_std)
-            else:
-                result = adaptive_denoise_bilateral(result, noise_std)
-        
         # 3. White Balance
         if cast_info['has_cast']:
             print(f"Applying white balance (severity: {cast_info['severity']:.3f})")
-            result = adaptive_white_balance(result, cast_info)
+            result, wb_params = adaptive_white_balance(result, cast_info)
             # Re-analyze after white balance
             brightness = analyze_brightness(result)
+            params_used.update(wb_params)
+
+        # 2. Denoising
+        if noise_std > 8:
+            if noise_std > 25:
+                result = adaptive_denoise_nlm(result, noise_std)
+                # params_used.update(nlm_params)
+            else:
+                result, bilateral_params = adaptive_denoise_bilateral(result, noise_std)
+                params_used.update(bilateral_params)
+    
+
+        # 1. Gamma Correction (jika diperlukan untuk brightness)
+        result = gamma_correction_adaptive(result, brightness, dynamic_range_info)
         
         # 4. Contrast Enhancement
         if contrast_info['is_low']:
             print(f"Applying contrast enhancement (range: {contrast_info['range_contrast']:.3f})")
-            result = adaptive_contrast_clahe(result, contrast_info, brightness)
-        
+            result, clahe_params = adaptive_contrast_clahe(result, contrast_info, brightness)
+            params_used.update(clahe_params)
+
         # 5. Saturation Enhancement
         if sat_info['needs_boost']:
             print(f"Applying saturation boost (mean_sat: {sat_info['mean_sat']:.1f})")
-            result = adaptive_saturation_enhancement(result, sat_info)
+            result, sat_params = adaptive_saturation_enhancement(result, sat_info)
+            params_used.update(sat_params)
         
         # 6. Sharpening (terakhir)
         if blur_info['is_blurry']:
             print(f"Applying sharpening (blur_severity: {blur_info['blur_severity']:.3f})")
-            result = adaptive_unsharp_masking(result, blur_info, noise_std)
+            result, sharpen_params = adaptive_unsharp_masking(result, blur_info, noise_std)
+            params_used.update(sharpen_params)
         
-        return result
+        return result, params_used
     
     except Exception as e:
         print(f"Error in auto_enhance_adaptive: {str(e)}")
         print("Returning original image")
-        return img
+        return img, {}

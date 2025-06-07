@@ -67,10 +67,13 @@ def auto_enhance_route():
 
     remove_all_enhanced_images()  # 🔥 Hapus file lama dulu
 
-    enhanced_img = auto_enhance(img)
+    enhanced_img, params_used = auto_enhance(img)
     result_filename = save_image(enhanced_img, suffix="auto")
 
-    return {'filename': result_filename}
+    return {
+        'filename': result_filename,
+        'params_used': params_used
+    }
 
 
 @app.route('/manual_enhance', methods=['POST'])
