@@ -226,3 +226,38 @@ input[type="range"] {
     height: 60vh;
   }
 }
+
+/* Mobile Responsive Styling */
+@media (max-width: 768px) {
+  .editor-layout {
+    flex-direction: column;
+  }
+
+  .control-panel {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .image-viewer-panel {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 1rem 1rem 2.5rem 1rem;
+  }
+
+  .image-viewer-panel img {
+    max-height: 60vh; /* agar tidak melebihi layar */
+  }
+
+  .view-toggle {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  #image-display-area {
+    width: 100%;
+  }
+}
