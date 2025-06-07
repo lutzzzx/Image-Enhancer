@@ -8,7 +8,8 @@ from utils.enhance import (
     white_balance_grayworld,
     enhance_contrast_clahe,
     enhance_saturation,
-    unsharp_masking
+    unsharp_masking,
+    gamma_correction
 )
 import numpy as np
 
@@ -83,18 +84,19 @@ def manual_enhance_route():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img = cv2.imread(filepath)
 
-    remove_all_enhanced_images()  # 🔥 Hapus file lama dulu
+    remove_all_enhanced_images()  # Hapus file lama dulu
 
     # Enhancement...
-    img = denoise_bilateral(img, float(data.get('sigma_space', 3)), float(data.get('sigma_color', 60)))
     img = white_balance_grayworld(img,
-                                   float(data.get('r_gain', 1.0)),
-                                   float(data.get('g_gain', 1.0)),
-                                   float(data.get('b_gain', 1.0)))
+                                float(data.get('r_gain', 1.0)),
+                                float(data.get('g_gain', 1.0)),
+                                float(data.get('b_gain', 1.0)))
+    img = denoise_bilateral(img, float(data.get('sigma_space', 3)), float(data.get('sigma_color', 60)))
+    img = gamma_correction(img, float(data.get('gamma', 1.0)))
     img = enhance_contrast_clahe(img,
                                   float(data.get('clip_limit', 2.0)),
                                   int(data.get('tile_grid', 8)))
-    img = enhance_saturation(img, float(data.get('saturation', 1.1)))
+    img = enhance_saturation(img, float(data.get('saturation', 1.0)))
     img = unsharp_masking(img,
                           radius=float(data.get('sharpen_radius', 1.0)),
                           amount=float(data.get('sharpen_amount', 100)))

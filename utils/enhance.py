@@ -76,6 +76,26 @@ def unsharp_masking(img, radius=1.0, amount=100):
     sharpened = cv2.addWeighted(img, 1 + (amount / 100.0), blurred, -(amount / 100.0), 0)
     return np.clip(sharpened, 0, 255).astype(np.uint8)
 
+def gamma_correction(img, gamma=None):
+    """
+    Gamma correction manual.
+    
+    Parameters:
+    - img: numpy.ndarray, gambar input
+    - gamma: float, nilai gamma yang ingin digunakan. Jika None, default-nya 1.0.
+    
+    Returns:
+    - corrected: numpy.ndarray, gambar hasil gamma correction
+    """
+    if gamma is None:
+        gamma = 1.0  # default normal gamma
+
+    # Apply gamma correction
+    table = np.array([((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+    corrected = cv2.LUT(img, table)
+
+    return corrected
+
 
 def adaptive_denoise_bilateral(img, noise_std):
     """Bilateral filter dengan parameter adaptif"""
@@ -309,8 +329,9 @@ def gamma_correction_adaptive(img, brightness, dynamic_range_info):
 
     # Apply gamma correction
     table = np.array([((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+    corrected = cv2.LUT(img, table)
 
-    return cv2.LUT(img, table)
+    return corrected, {'gamma': gamma}
 
 
 def auto_enhance(img):
@@ -359,7 +380,8 @@ def auto_enhance(img):
     
 
         # 1. Gamma Correction (jika diperlukan untuk brightness)
-        result = gamma_correction_adaptive(result, brightness, dynamic_range_info)
+        result, gamma_params = gamma_correction_adaptive(result, brightness, dynamic_range_info)
+        params_used.update(gamma_params)
         
         # 4. Contrast Enhancement
         if contrast_info['is_low']:

@@ -25,6 +25,7 @@ const defaultSliderValues = {
   saturation: "1",
   sharpen_radius: "0.1",
   sharpen_amount: "0",
+  gamma: "1.0",
 };
 
 // Function to show loading state
@@ -113,6 +114,10 @@ function autoEnhance() {
             data.params_used.sharpen_amount.toFixed(0)
           );
         }
+        //Brightness
+        if (data.params_used.gamma !== undefined) {
+          updateSlider("gamma", data.params_used.gamma.toFixed(2));
+        }
       } else {
         console.error("Auto enhance error:", data.error || "Unknown error");
         if (enhancedImgPlaceholderText)
@@ -148,6 +153,7 @@ function manualEnhance() {
     saturation: document.getElementById("saturation").value,
     sharpen_radius: document.getElementById("sharpen_radius").value,
     sharpen_amount: document.getElementById("sharpen_amount").value,
+    gamma: document.getElementById("gamma").value,
   };
 
   fetch("/manual_enhance", {
@@ -212,6 +218,7 @@ function setupSliderListeners() {
     "saturation",
     "sharpen_radius",
     "sharpen_amount",
+    "gamma",
   ];
   sliders.forEach((id) => {
     const slider = document.getElementById(id);
