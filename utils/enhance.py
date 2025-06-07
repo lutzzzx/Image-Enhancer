@@ -233,15 +233,16 @@ def adaptive_saturation_enhancement(img, sat_info):
     low_sat_ratio = sat_info['low_sat_ratio']
     
     # Hitung scale factor berdasarkan kondisi
-    if mean_sat < 30:  # Very desaturated
-        scale = 1.4 + (low_sat_ratio * 0.3)
-    elif mean_sat < 50:  # Moderately desaturated
-        scale = 1.2 + (low_sat_ratio * 0.2)
-    else:  # Slightly desaturated
+    if mean_sat < 30:
         scale = 1.1 + (low_sat_ratio * 0.1)
+    elif mean_sat < 50:
+        scale = 1.05 + (low_sat_ratio * 0.05)
+    else:
+        scale = 1.02 + (low_sat_ratio * 0.02)
+
     
     # Limit maximum enhancement
-    scale = min(scale, 1.8)
+    scale = min(scale, 1.5)
     
     # Convert to HSV with proper data type handling
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
