@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor Peningkatan Citra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body
+    class="bg-white text-slate-800"
+    {%
+    if
+    filename
+    %}data-filename="{{ filename }}"
+    {%
+    endif
+    %}
+  >
+    <div class="editor-layout">
+      <aside class="control-panel">
+        <header class="mb-8">
+          <h1 class="text-3xl font-bold text-indigo-600">Pixva</h1>
+          <h2 class="text-2xl font-bold text-indigo-600">Image Enhancer</h2>
+          <p class="text-slate-600 mt-2 text-sm">
+            Unggah dan sempurnakan gambar Anda dengan alat canggih kami.
+          </p>
+        </header>
+
+        <section id="upload-section" class="mb-6">
+          <h2 class="text-lg font-semibold mb-3 text-slate-700">
+            1. Unggah Gambar
+          </h2>
+          <form method="POST" enctype="multipart/form-data">
+            <input
+              type="file"
+              name="image"
+              id="image-upload"
+              accept="image/*"
+              required
+              class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            />
+            <button type="submit" class="btn-primary w-full mt-3">
+              Unggah & Mulai Edit
+            </button>
+          </form>
+        </section>
+
+        {% if filename %}
+        <hr class="my-6 border-slate-200" />
+        <div id="editor-controls">
+          <div class="mb-6">
+            <h2 class="text-lg font-semibold mb-3 text-slate-700">
+              2. Peningkatan Cepat
+            </h2>
+            <button
+              class="btn-success w-full"
+              id="btn-auto"
+              onclick="handleAutoEnhance()"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 inline-block mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                />
+              </svg>
+              Tingkatkan Otomatis
+            </button>
+          </div>
+
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-lg font-semibold text-slate-700">
+                3. Kontrol Manual
+              </h2>
+              <button
+                id="reset-manual-controls"
+                class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                Reset
+              </button>
+            </div>
+            <div class="space-y-4">
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  Denoise <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Menghilangkan noise atau bintik pada gambar agar terlihat
+                    lebih halus dan bersih.</span
+                  >
+                </legend>
+                <div>
+                  <label for="sigma_space" class="slider-label block text-sm"
+                    >Spatial Sigma</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0"
+                    max="100"
+                    step="1"
+                    id="sigma_space"
+                    value="0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="sigma_space_value"
+                    >0</span
+                  >
+                </div>
+                <div>
+                  <label for="sigma_color" class="slider-label block text-sm"
+                    >Color Sigma</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0"
+                    max="150"
+                    step="5"
+                    id="sigma_color"
+                    value="0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="sigma_color_value"
+                    >0</span
+                  >
+                </div>
+              </fieldset>
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  White Balance <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Menyeimbangkan suhu warna (merah, hijau, biru) untuk
+                    menghasilkan warna yang akurat dan natural.</span
+                  >
+                </legend>
+                <div>
+                  <label for="r_gain" class="slider-label block text-sm"
+                    >Red Gain</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    id="r_gain"
+                    value="1.0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="r_gain_value"
+                    >1.0</span
+                  >
+                </div>
+                <div>
+                  <label for="g_gain" class="slider-label block text-sm"
+                    >Green Gain</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    id="g_gain"
+                    value="1.0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="g_gain_value"
+                    >1.0</span
+                  >
+                </div>
+                <div>
+                  <label for="b_gain" class="slider-label block text-sm"
+                    >Blue Gain</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    id="b_gain"
+                    value="1.0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="b_gain_value"
+                    >1.0</span
+                  >
+                </div>
+              </fieldset>
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  Saturasi <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Mengatur intensitas atau 'kepekatan' warna. Nilai tinggi
+                    membuat warna lebih hidup, nilai rendah membuat warna
+                    pudar.</span
+                  >
+                </legend>
+                <div>
+                  <label for="saturation" class="slider-label block text-sm"
+                    >Level Saturasi</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.1"
+                    max="2.0"
+                    step="0.05"
+                    id="saturation"
+                    value="1.0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="saturation_value"
+                    >1.0</span
+                  >
+                </div>
+              </fieldset>
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  Kecerahan <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Mengatur tingkat kecerahan keseluruhan gambar. Geser ke
+                    kiri untuk lebih cerah, ke kanan untuk lebih gelap.</span
+                  >
+                </legend>
+                <div>
+                  <label for="gamma" class="slider-label block text-sm"
+                    >Level Gamma</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.1"
+                    max="3.0"
+                    step="0.05"
+                    id="gamma"
+                    value="1.0"
+                  />
+                  <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>Cerah</span><span>Gelap</span>
+                  </div>
+                  <span
+                    class="text-xs text-slate-500 float-right"
+                    id="gamma_value"
+                    >1.0</span
+                  >
+                </div>
+              </fieldset>
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  Kontras <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Meningkatkan kontras lokal untuk menonjolkan detail pada
+                    gambar tanpa mengubah kecerahan secara drastis.</span
+                  >
+                </legend>
+                <div>
+                  <label for="clip_limit" class="slider-label block text-sm"
+                    >Clip Limit</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    id="clip_limit"
+                    value="0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="clip_limit_value"
+                    >0</span
+                  >
+                </div>
+                <div>
+                  <label for="tile_grid" class="slider-label block text-sm"
+                    >Tile Grid Size</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="1"
+                    max="16"
+                    step="1"
+                    id="tile_grid"
+                    value="1"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="tile_grid_value"
+                    >1</span
+                  >
+                </div>
+              </fieldset>
+              <fieldset class="space-y-2 p-3 border rounded-md">
+                <legend
+                  class="text-base font-medium text-slate-600 px-1 tooltip-container"
+                >
+                  Ketajaman <span class="tooltip-trigger">i</span
+                  ><span class="tooltip-content"
+                    >Mempertajam detail dan tepi objek pada gambar agar terlihat
+                    lebih fokus dan jelas.</span
+                  >
+                </legend>
+                <div>
+                  <label for="sharpen_radius" class="slider-label block text-sm"
+                    >Radius</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0.1"
+                    max="5"
+                    step="0.1"
+                    id="sharpen_radius"
+                    value="0.1"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="sharpen_radius_value"
+                    >0.1</span
+                  >
+                </div>
+                <div>
+                  <label for="sharpen_amount" class="slider-label block text-sm"
+                    >Amount (%)</label
+                  ><input
+                    type="range"
+                    class="w-full"
+                    min="0"
+                    max="200"
+                    step="10"
+                    id="sharpen_amount"
+                    value="0"
+                  /><span
+                    class="text-xs text-slate-500 float-right"
+                    id="sharpen_amount_value"
+                    >0</span
+                  >
+                </div>
+              </fieldset>
+            </div>
+            <div class="mt-6">
+              <button
+                class="btn-primary w-full"
+                onclick="handleManualEnhance()"
+              >
+                Terapkan Kontrol Manual
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-lg font-semibold mb-3 text-slate-700">
+              4. Unduh Hasil
+            </h2>
+            <a
+              id="download-link"
+              href="#"
+              class="btn-outline-success hidden w-full"
+              download
+              >Unduh Gambar</a
+            >
+            <p
+              id="download-hint"
+              class="text-sm text-slate-500 mt-2 text-center"
+            >
+              Tombol unduh akan aktif setelah gambar ditingkatkan.
+            </p>
+          </div>
+        </div>
+        {% endif %}
+
+        <footer class="text-center mt-10 pt-4 border-t border-slate-200">
+          <p class="text-xs text-slate-400">
+            &copy; <span id="current-year"></span> Pixva.
+          </p>
+        </footer>
+      </aside>
+
+      <main class="image-viewer-panel">
+        {% if filename %}
+        <div
+          id="image-display-area"
+          class="w-full h-full flex flex-col items-center justify-center"
+        >
+          <div
+            class="relative w-full flex-grow flex items-center justify-center"
+          >
+            <img
+              src="{{ url_for('static', filename='uploads/' + filename) }}"
+              id="original-img"
+              alt="Original Image"
+            />
+            <div
+              id="enhanced-image-container"
+              class="hidden w-full h-full flex items-center justify-center"
+            >
+              <img
+                id="enhanced-img"
+                src=""
+                alt="Enhanced Image"
+                class="hidden"
+              />
+              <div id="loading-indicator" class="loader hidden"></div>
+              <span id="enhanced-img-placeholder-text" class="text-slate-500"
+                >Hasil peningkatan akan muncul di sini.</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="view-toggle flex items-center space-x-2 bg-white p-1 rounded-full shadow-md mt-4"
+          >
+            <button
+              id="btn-show-original"
+              class="px-4 py-2 text-sm rounded-full active"
+              onclick="showImage('original')"
+            >
+              Asli
+            </button>
+            <button
+              id="btn-show-enhanced"
+              class="px-4 py-2 text-sm rounded-full"
+              onclick="showImage('enhanced')"
+            >
+              Ditingkatkan
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="mx-auto h-16 w-16 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="1"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          <h2 class="mt-4 text-xl font-medium text-slate-600">
+            Area Tampilan Gambar
+          </h2>
+          <p class="text-slate-500 mt-1">
+            Unggah gambar Anda di panel kiri untuk memulai.
+          </p>
+        </div>
+        {% endif %}
+      </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+  </body>
+</html>

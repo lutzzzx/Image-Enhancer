@@ -32,8 +32,7 @@ const defaultSliderValues = {
 function showLoading() {
   if (loadingIndicator) loadingIndicator.style.display = "block";
   if (enhancedImg) enhancedImg.style.display = "none";
-  if (enhancedImgPlaceholderText)
-    enhancedImgPlaceholderText.textContent = "Processing...";
+  if (enhancedImgPlaceholderText) enhancedImgPlaceholderText.textContent = "";
 }
 
 // Function to hide loading state
@@ -285,3 +284,46 @@ if (imageUploadInput) {
     }
   });
 }
+
+function showImage(type) {
+  const originalImg = document.getElementById("original-img");
+  const enhancedContainer = document.getElementById("enhanced-image-container");
+  const btnOriginal = document.getElementById("btn-show-original");
+  const btnEnhanced = document.getElementById("btn-show-enhanced");
+
+  if (type === "original") {
+    originalImg.classList.remove("hidden");
+    enhancedContainer.classList.add("hidden");
+    btnOriginal.classList.add("active");
+    btnEnhanced.classList.remove("active");
+  } else {
+    originalImg.classList.add("hidden");
+    enhancedContainer.classList.remove("hidden");
+    btnOriginal.classList.remove("active");
+    btnEnhanced.classList.add("active");
+  }
+}
+
+// --- FUNGSI BARU UNTUK MENANGANI PROSES ENHANCE ---
+// Fungsi ini membungkus fungsi asli dari script.js untuk menambahkan fungsionalitas baru
+async function handleAutoEnhance() {
+  // Panggil fungsi asli yang ada di script.js
+  // Kita asumsikan fungsi autoEnhance() adalah async dan akan selesai sebelum baris berikutnya
+  await autoEnhance();
+  // Setelah selesai, secara otomatis pindah ke tampilan 'enhanced'
+  showImage("enhanced");
+}
+
+async function handleManualEnhance() {
+  // Panggil fungsi asli yang ada di script.js
+  await manualEnhance();
+  // Setelah selesai, secara otomatis pindah ke tampilan 'enhanced'
+  showImage("enhanced");
+}
+
+window.showImage = showImage;
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.filename) {
+    showImage("original");
+  }
+});

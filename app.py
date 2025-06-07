@@ -59,6 +59,23 @@ def index():
 
     return render_template('index.html', filename=None)
 
+@app.route('/editor', methods=['GET', 'POST'])
+def editor():
+    if request.method == 'POST':
+        if 'image' not in request.files:
+            return redirect(request.url)
+        file = request.files['image']
+        if file.filename == '':
+            return redirect(request.url)
+
+        # Simpan file asli
+        filename = f"{uuid.uuid4().hex}_original.jpg"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        return render_template('editor.html', filename=filename)
+
+    return render_template('editor.html', filename=None)
 
 @app.route('/auto_enhance', methods=['POST'])
 def auto_enhance_route():
