@@ -17,16 +17,18 @@ from utils.enhance import (
     gamma_correction
 )
 
-# Inisialisasi Flask
 app = Flask(__name__)
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 🔒 Batas upload 10 MB
 
-# Pastikan folder upload tersedia
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+MAX_WIDTH = 1920
+MAX_HEIGHT = 1080
+
 def convert_heic_to_jpg(file_path, save_folder):
-    """Konversi file HEIC ke JPG"""
+    """Konversi HEIC ke JPG dengan resize"""
     heif_file = pyheif.read(file_path)
     image = Image.frombytes(
         heif_file.mode,
@@ -36,10 +38,20 @@ def convert_heic_to_jpg(file_path, save_folder):
         heif_file.mode,
         heif_file.stride,
     )
+    image = resize_image(image)
     new_filename = f"{uuid.uuid4().hex}_original.jpg"
     new_path = os.path.join(save_folder, new_filename)
-    image.save(new_path, "JPEG")
+    image.save(new_path, "JPEG", quality=85)
     return new_filename
+
+def resize_image(image):
+    """Resize gambar jika terlalu besar"""
+    width, height = image.size
+    if width > MAX_WIDTH or height > MAX_HEIGHT:
+        ratio = min(MAX_WIDTH / width, MAX_HEIGHT / height)
+        new_size = (int(width * ratio), int(height * ratio))
+        return image.resize(new_size, Image.LANCZOS)
+    return image
 
 def save_image(image, suffix="enhanced"):
     """Simpan gambar ke folder upload dan kembalikan nama file baru"""
@@ -55,9 +67,13 @@ def remove_all_enhanced_images():
         if fname.endswith('_auto.jpg') or fname.endswith('_manual.jpg'):
             try:
                 os.remove(os.path.join(folder, fname))
-                print(f"Deleted: {fname}")
             except Exception as e:
                 print(f"Error deleting {fname}: {e}")
+
+def allowed_file(filename):
+    """Validasi ekstensi file"""
+    ext = os.path.splitext(filename)[1].lower()
+    return ext in ['.jpg', '.jpeg', '.png', '.heic']
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -65,19 +81,25 @@ def index():
         if 'image' not in request.files:
             return redirect(request.url)
         file = request.files['image']
-        if file.filename == '':
-            return redirect(request.url)
+        if file.filename == '' or not allowed_file(file.filename):
+            return "Unsupported file format. Please upload JPG, PNG, or HEIC.", 400
 
         ext = os.path.splitext(file.filename)[1].lower()
-        if ext == '.heic':
-            temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
-            file.save(temp_path)
-            filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
-            os.remove(temp_path)
-        else:
-            filename = f"{uuid.uuid4().hex}_original.jpg"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+        try:
+            if ext == '.heic':
+                temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
+                file.save(temp_path)
+                filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
+                os.remove(temp_path)
+            else:
+                image = Image.open(file.stream)
+                image = resize_image(image)
+                filename = f"{uuid.uuid4().hex}_original.jpg"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                image.save(filepath, "JPEG", quality=85)
+        except Exception as e:
+            print(f"Error processing image: {e}")
+            return "Error processing image.", 500
 
         return render_template('index.html', filename=filename)
 
@@ -89,19 +111,25 @@ def editor():
         if 'image' not in request.files:
             return redirect(request.url)
         file = request.files['image']
-        if file.filename == '':
-            return redirect(request.url)
+        if file.filename == '' or not allowed_file(file.filename):
+            return "Unsupported file format. Please upload JPG, PNG, or HEIC.", 400
 
         ext = os.path.splitext(file.filename)[1].lower()
-        if ext == '.heic':
-            temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
-            file.save(temp_path)
-            filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
-            os.remove(temp_path)
-        else:
-            filename = f"{uuid.uuid4().hex}_original.jpg"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+        try:
+            if ext == '.heic':
+                temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
+                file.save(temp_path)
+                filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
+                os.remove(temp_path)
+            else:
+                image = Image.open(file.stream)
+                image = resize_image(image)
+                filename = f"{uuid.uuid4().hex}_original.jpg"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                image.save(filepath, "JPEG", quality=85)
+        except Exception as e:
+            print(f"Error processing image: {e}")
+            return "Error processing image.", 500
 
         return render_template('editor.html', filename=filename)
 
@@ -138,7 +166,6 @@ def manual_enhance_route():
 
     remove_all_enhanced_images()
 
-    # Manual enhancement
     img = white_balance_grayworld(img,
                                   float(data.get('r_gain', 1.0)),
                                   float(data.get('g_gain', 1.0)),
