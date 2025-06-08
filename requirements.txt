@@ -2,3 +2,5 @@ Flask
 opencv-python
 numpy
 gunicorn
+pyheif
+Pillow

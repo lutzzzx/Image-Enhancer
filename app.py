@@ -2,6 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 import cv2
 import uuid
+import numpy as np
+import pyheif
+from PIL import Image
+
+# Import fungsi enhancement
 from utils.enhance import (
     auto_enhance,
     denoise_bilateral,
@@ -11,7 +16,6 @@ from utils.enhance import (
     unsharp_masking,
     gamma_correction
 )
-import numpy as np
 
 # Inisialisasi Flask
 app = Flask(__name__)
@@ -21,6 +25,21 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Pastikan folder upload tersedia
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+def convert_heic_to_jpg(file_path, save_folder):
+    """Konversi file HEIC ke JPG"""
+    heif_file = pyheif.read(file_path)
+    image = Image.frombytes(
+        heif_file.mode,
+        heif_file.size,
+        heif_file.data,
+        "raw",
+        heif_file.mode,
+        heif_file.stride,
+    )
+    new_filename = f"{uuid.uuid4().hex}_original.jpg"
+    new_path = os.path.join(save_folder, new_filename)
+    image.save(new_path, "JPEG")
+    return new_filename
 
 def save_image(image, suffix="enhanced"):
     """Simpan gambar ke folder upload dan kembalikan nama file baru"""
@@ -40,7 +59,6 @@ def remove_all_enhanced_images():
             except Exception as e:
                 print(f"Error deleting {fname}: {e}")
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -50,10 +68,16 @@ def index():
         if file.filename == '':
             return redirect(request.url)
 
-        # Simpan file asli
-        filename = f"{uuid.uuid4().hex}_original.jpg"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext == '.heic':
+            temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
+            file.save(temp_path)
+            filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
+            os.remove(temp_path)
+        else:
+            filename = f"{uuid.uuid4().hex}_original.jpg"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
 
         return render_template('index.html', filename=filename)
 
@@ -68,10 +92,16 @@ def editor():
         if file.filename == '':
             return redirect(request.url)
 
-        # Simpan file asli
-        filename = f"{uuid.uuid4().hex}_original.jpg"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext == '.heic':
+            temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4().hex}_temp.heic")
+            file.save(temp_path)
+            filename = convert_heic_to_jpg(temp_path, app.config['UPLOAD_FOLDER'])
+            os.remove(temp_path)
+        else:
+            filename = f"{uuid.uuid4().hex}_original.jpg"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
 
         return render_template('editor.html', filename=filename)
 
@@ -83,7 +113,10 @@ def auto_enhance_route():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img = cv2.imread(filepath)
 
-    remove_all_enhanced_images()  # 🔥 Hapus file lama dulu
+    if img is None:
+        return {'error': 'Gambar tidak dapat dibaca. Pastikan format file didukung.'}, 400
+
+    remove_all_enhanced_images()
 
     enhanced_img, params_used = auto_enhance(img)
     result_filename = save_image(enhanced_img, suffix="auto")
@@ -93,7 +126,6 @@ def auto_enhance_route():
         'params_used': params_used
     }
 
-
 @app.route('/manual_enhance', methods=['POST'])
 def manual_enhance_route():
     data = request.json
@@ -101,13 +133,16 @@ def manual_enhance_route():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img = cv2.imread(filepath)
 
-    remove_all_enhanced_images()  # Hapus file lama dulu
+    if img is None:
+        return {'error': 'Gambar tidak dapat dibaca. Pastikan format file didukung.'}, 400
 
-    # Enhancement...
+    remove_all_enhanced_images()
+
+    # Manual enhancement
     img = white_balance_grayworld(img,
-                                float(data.get('r_gain', 1.0)),
-                                float(data.get('g_gain', 1.0)),
-                                float(data.get('b_gain', 1.0)))
+                                  float(data.get('r_gain', 1.0)),
+                                  float(data.get('g_gain', 1.0)),
+                                  float(data.get('b_gain', 1.0)))
     img = denoise_bilateral(img, float(data.get('sigma_space', 3)), float(data.get('sigma_color', 60)))
     img = gamma_correction(img, float(data.get('gamma', 1.0)))
     img = enhance_contrast_clahe(img,
@@ -122,11 +157,9 @@ def manual_enhance_route():
 
     return {'filename': result_filename}
 
-
 @app.route('/download/<filename>')
 def download_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
