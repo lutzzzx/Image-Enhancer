@@ -3,7 +3,7 @@ import os
 import cv2
 import uuid
 import numpy as np
-import pyheif
+import pillow_heif
 from PIL import Image
 
 # Import fungsi enhancement
@@ -28,21 +28,19 @@ MAX_WIDTH = 1920
 MAX_HEIGHT = 1080
 
 def convert_heic_to_jpg(file_path, save_folder):
-    """Konversi HEIC ke JPG dengan resize"""
-    heif_file = pyheif.read(file_path)
+    """Konversi HEIC ke JPG dengan resize menggunakan pillow-heif"""
+    heif_file = pillow_heif.read_heif(file_path)
     image = Image.frombytes(
         heif_file.mode,
         heif_file.size,
-        heif_file.data,
-        "raw",
-        heif_file.mode,
-        heif_file.stride,
+        heif_file.data
     )
     image = resize_image(image)
     new_filename = f"{uuid.uuid4().hex}_original.jpg"
     new_path = os.path.join(save_folder, new_filename)
     image.save(new_path, "JPEG", quality=85)
     return new_filename
+
 
 def resize_image(image):
     """Resize gambar jika terlalu besar"""
@@ -73,7 +71,7 @@ def remove_all_enhanced_images():
 def allowed_file(filename):
     """Validasi ekstensi file"""
     ext = os.path.splitext(filename)[1].lower()
-    return ext in ['.jpg', '.jpeg', '.png', '.heic']
+    return ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp', '.heif', '.heic']
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -82,7 +80,10 @@ def index():
             return redirect(request.url)
         file = request.files['image']
         if file.filename == '' or not allowed_file(file.filename):
-            return "Unsupported file format. Please upload JPG, PNG, or HEIC.", 400
+            return (
+                "Unsupported file format. Please upload an image with one of these extensions: "
+                ".jpg, .jpeg, .png, .bmp, .tiff, .tif, .webp, .heif, .heic."
+            ), 400
 
         ext = os.path.splitext(file.filename)[1].lower()
         try:

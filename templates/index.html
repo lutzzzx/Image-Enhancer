@@ -41,6 +41,7 @@
     />
 
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -440,13 +441,10 @@
                 />
               </svg>
             </div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-4">
-              AI Enhancement Instan
-            </h3>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Auto Enhance</h3>
             <p class="text-gray-600 leading-relaxed">
-              Algoritma pembelajaran mendalam yang menganalisis dan memperbaiki
-              noise, kontras, saturasi, dan ketajaman dalam hitungan detik
-              dengan presisi tinggi.
+              Perbaiki pencahayaan, warna, dan ketajaman hanya dengan satu klik.
+              Ditenagai AI untuk hasil optimal tanpa repot pengaturan manual.
             </p>
           </div>
 
@@ -505,12 +503,12 @@
               </svg>
             </div>
             <h3 class="text-2xl font-bold text-gray-900 mb-4">
-              Preview Real-time
+              Before & After Preview
             </h3>
             <p class="text-gray-600 leading-relaxed">
-              Lihat perubahan secara langsung dengan preview split-screen yang
-              responsif. Download hasil dalam resolusi ultra-high dengan satu
-              klik.
+              Lihat perbandingan real-time antara gambar asli dan hasil edit
+              secara berdampingan. Cocok untuk evaluasi cepat sebelum menyimpan
+              hasil akhir.
             </p>
           </div>
 
@@ -534,11 +532,11 @@
               </svg>
             </div>
             <h3 class="text-2xl font-bold text-gray-900 mb-4">
-              Batch Processing
+              Manual Fine-Tuning
             </h3>
             <p class="text-gray-600 leading-relaxed">
-              Proses puluhan gambar sekaligus dengan pengaturan yang konsisten.
-              Sempurna untuk fotografer dan content creator yang produktif.
+              Atur pencahayaan, kontras, saturasi, dan lainnya dengan slider
+              presisi. Cocok untuk kreator yang ingin hasil sesuai gaya pribadi.
             </p>
           </div>
 
@@ -565,9 +563,8 @@
               100% Privasi Terjamin
             </h3>
             <p class="text-gray-600 leading-relaxed">
-              Semua pemrosesan dilakukan secara lokal di browser Anda. Tidak ada
-              gambar yang dikirim ke server - privasi Anda adalah prioritas
-              utama.
+              Gambar akan segera dihapus setelah menyelesaikan proses
+              pengeditan. Privasi Anda adalah prioritas utama.
             </p>
           </div>
 
@@ -594,9 +591,9 @@
               Format Universal
             </h3>
             <p class="text-gray-600 leading-relaxed">
-              Mendukung semua format populer: JPG, PNG, WEBP, TIFF, dan RAW.
-              Export ke format apapun dengan kualitas terbaik yang Anda
-              butuhkan.
+              Mendukung semua format populer: JPG, JPEG, PNG, BMP, TIFF
+              (termasuk TIF), WEBP, HEIF, dan HEIC. Export ke format apapun
+              dengan kualitas terbaik yang Anda butuhkan.
             </p>
           </div>
         </div>
@@ -734,9 +731,8 @@
             <div class="faq-content mt-4">
               <p class="text-gray-600 leading-relaxed">
                 Pixva mendukung semua format gambar populer termasuk JPG, JPEG,
-                PNG, WEBP, TIFF, dan bahkan format RAW dari kamera profesional.
-                Ukuran maksimal file adalah 50MB per gambar untuk performa
-                optimal.
+                PNG, BMP, TIFF (termasuk TIF), WEBP, HEIF, dan HEIC. Ukuran
+                maksimal file adalah 10MB per gambar untuk performa optimal.
               </p>
             </div>
           </div>
@@ -795,10 +791,8 @@
             </button>
             <div class="faq-content mt-4">
               <p class="text-gray-600 leading-relaxed">
-                Tentu saja! Pixva menyimpan history editing Anda selama sesi
-                berlangsung. Anda bisa mengundo/redo perubahan, menyesuaikan
-                parameter, atau bahkan reset ke gambar original kapan saja
-                sebelum download final.
+                Tentu saja! pada Pixva dapat menyesuaikan parameter, atau bahkan
+                reset ke gambar original kapan saja sebelum download final.
               </p>
             </div>
           </div>
@@ -813,11 +807,12 @@
           Didukung oleh Teknologi Terdepan
         </h3>
         <div class="flex flex-wrap justify-center items-center gap-4">
-          <span class="tech-badge">🐍 Python</span>
-          <span class="tech-badge">⚡ Flask</span>
-          <span class="tech-badge">🔬 OpenCV</span>
-          <span class="tech-badge">📊 NumPy</span>
-          <span class="tech-badge">💨 Tailwind CSS</span>
+          <span class="tech-badge"> Python</span>
+          <span class="tech-badge">Flask</span>
+          <span class="tech-badge">OpenCV</span>
+          <span class="tech-badge">NumPy</span>
+          <span class="tech-badge">Pillow</span>
+          <span class="tech-badge">Tailwind CSS</span>
         </div>
       </div>
     </section>
@@ -960,6 +955,9 @@
       document.querySelectorAll(".feature-card, .step-card").forEach((el) => {
         observer.observe(el);
       });
+    </script>
+    <script>
+      feather.replace();
     </script>
   </body>
 </html>
