@@ -59,7 +59,7 @@ def has_color_cast(img, threshold=15):
         'means': (mean_r, mean_g, mean_b)
     }
 
-def is_low_contrast(img, threshold=0.3):
+def is_low_contrast(img, threshold=0.25):
     """Analisis kontras dengan berbagai metrik"""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     

@@ -36,6 +36,8 @@ def convert_heic_to_jpg(file_path, save_folder):
         heif_file.data
     )
     image = resize_image(image)
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
     new_filename = f"{uuid.uuid4().hex}_original.jpg"
     new_path = os.path.join(save_folder, new_filename)
     image.save(new_path, "JPEG", quality=85)
@@ -95,9 +97,12 @@ def index():
             else:
                 image = Image.open(file.stream)
                 image = resize_image(image)
+                if image.mode in ("RGBA", "P"):  # Konversi jika perlu
+                    image = image.convert("RGB")
                 filename = f"{uuid.uuid4().hex}_original.jpg"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 image.save(filepath, "JPEG", quality=85)
+
         except Exception as e:
             print(f"Error processing image: {e}")
             return "Error processing image.", 500
@@ -125,9 +130,12 @@ def editor():
             else:
                 image = Image.open(file.stream)
                 image = resize_image(image)
+                if image.mode in ("RGBA", "P"):
+                    image = image.convert("RGB")
                 filename = f"{uuid.uuid4().hex}_original.jpg"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 image.save(filepath, "JPEG", quality=85)
+
         except Exception as e:
             print(f"Error processing image: {e}")
             return "Error processing image.", 500
