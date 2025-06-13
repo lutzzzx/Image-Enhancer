@@ -1,129 +1,151 @@
-# 🖼️ Image Enhancement Web App (Flask + OpenCV)
+<div align="center">
+  <a href="https://pixva.lutfinity.space/">
+    <img src="https://raw.githubusercontent.com/Lutzzzx/pixva/main/static/image/pixva-logo.jpg" alt="Pixva Logo" width="150">
+  </a>
+  <h1>Pixva - AI Image Enhancer</h1>
+  <p><strong>Revolusi AI untuk Gambar Sempurna</strong></p>
+  <p>
+    Aplikasi web canggih yang mentransformasi kualitas gambar Anda secara instan menggunakan analisis cerdas dan kontrol penyuntingan manual yang intuitif.
+    <br><br>
+    <a href="https://pixva.lutfinity.space/" target="_blank"><strong>🚀 Lihat Demo Langsung »</strong></a> ·
+    <a href="#-fitur-unggulan">Fitur</a> ·
+    <a href="#-instalasi--menjalankan">Instalasi</a>
+  </p>
+</div>
 
-Aplikasi web interaktif untuk **peningkatan kualitas citra (image enhancement)** secara **otomatis berbasis deteksi karakteristik gambar** dan **manual melalui kontrol parameter real-time**. Dibangun dengan **Flask**, **OpenCV**, dan **JavaScript**.
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Lutzzzx/pixva/main/static/image/pixva-demo.gif" alt="Demo Pixva" width="80%">
+</div>
 
 ---
 
-## 🔧 Fitur Utama
+## 💡 Tentang Proyek
 
-### ✅ Upload Gambar
+**Pixva** adalah aplikasi web berbasis Flask dan OpenCV yang dirancang sebagai solusi lengkap peningkatan kualitas citra (_image enhancement_). Tidak seperti editor biasa, Pixva menggabungkan dua pendekatan:
 
-- Dukungan format `.jpg`, `.jpeg`, `.png`
-- Gambar disimpan dalam folder `static/uploads`
+1. **Peningkatan Otomatis Cerdas:** AI menganalisis aspek gambar seperti noise, kontras, warna, dan ketajaman, lalu menerapkan peningkatan adaptif.
+2. **Kontrol Manual Presisi:** Tersedia panel editor dengan slider real-time untuk pengaturan detail seperti _denoise_, white balance, gamma, dan lainnya.
 
-### ✅ Enhancement Otomatis (berbasis analisis)
+Antarmukanya modern, responsif, dan ramah perangkat mobile.
 
-Proses bertahap dan adaptif:
+---
 
-1. **Denoising**
-   - Deteksi noise (varian intensitas area datar)
-   - Bilateral filter (`σ_space ≈ 3`, `σ_color ≈ 2×σ_noise`)
-   - Non-Local Means untuk noise berat
-2. **White Balance**
-   - Gray-World Assumption
-   - Deteksi color cast dari selisih kanal RGB
-3. **Kontras**
-   - CLAHE (`clipLimit=2.0`, `tileGridSize=(8,8)`)
-   - Alternatif: histogram equalization
-4. **Saturasi**
-   - Tambahan 10–20% jika nilai saturasi rendah
-5. **Sharpening**
-   - Unsharp Masking (`radius=0.5–2 px`, `amount=50–150%`)
-   - Berdasarkan varians Laplacian (blur detection)
+## ✨ Fitur Unggulan
 
-### ✅ Enhancement Manual (Editor Real-Time)
+| Ikon | Fitur                            | Deskripsi                                                                                       |
+| :--: | -------------------------------- | ----------------------------------------------------------------------------------------------- |
+|  🧠  | **Peningkatan Otomatis Cerdas**  | Analisis noise, kontras, warna, dan blur untuk menghasilkan peningkatan adaptif.                |
+|  🎛️  | **Editor Manual Komprehensif**   | Kontrol real-time atas Denoise, White Balance, Gamma, Kontras (CLAHE), Saturasi, dan Ketajaman. |
+|  ↔️  | **Perbandingan Real-Time**       | Tombol _toggle_ untuk melihat perbandingan gambar asli vs hasil yang telah ditingkatkan.        |
+|  📂  | **Dukungan Format Luas**         | Mendukung JPG, PNG, WEBP, BMP, TIFF, hingga HEIC/HEIF.                                          |
+|  📱  | **Antarmuka Modern & Responsif** | Desain dual-panel untuk desktop dan layout adaptif untuk perangkat mobile.                      |
+|  🔒  | **Privasi Terjamin**             | Gambar dihapus otomatis setelah sesi berakhir, menjaga kerahasiaan pengguna.                    |
 
-- Kontrol parameter melalui slider:
-  - `σ_space`, `σ_color` (denoising)
-  - RGB gain (white balance)
-  - `clipLimit`, `tileGridSize` (CLAHE)
-  - Saturasi (%)
-  - Sharpening `radius`, `amount`
-- Preview langsung & pengunduhan hasil
+---
 
-### ✅ Download Gambar
+## 🛠️ Tumpukan Teknologi
 
-- Hasil disimpan dan dapat diunduh via tombol "Download"
+| Kategori             | Teknologi                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend**          | ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/Flask-000?style=for-the-badge&logo=flask&logoColor=white) ![Gunicorn](https://img.shields.io/badge/Gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white)                                                                                                                            |
+| **Pemrosesan Citra** | ![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white) ![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white) ![Pillow](https://img.shields.io/badge/Pillow-306998?style=for-the-badge&logo=pillow&logoColor=white)                                                                                                                               |
+| **Frontend**         | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white) |
+| **Tambahan**         | `pillow-heif` untuk dukungan gambar HEIC/HEIF                                                                                                                                                                                                                                                                                                                                                                                                |
+
+---
+
+## 🚀 Instalasi & Menjalankan
+
+### 1. Prasyarat
+
+- Python 3.8 atau lebih tinggi
+- `pip` dan `venv` aktif
+
+### 2. Clone Repositori
+
+```bash
+git clone https://github.com/Lutzzzx/pixva.git
+cd pixva
+```
+
+### 3. Buat dan Aktifkan Virtual Environment
+
+> **Disarankan** menggunakan _virtual environment_ agar dependensi tidak bercampur dengan proyek lain.
+
+- **macOS/Linux**
+
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
+
+- **Windows**
+  ```bash
+  python -m venv venv
+  .\venv\Scripts\activate
+  ```
+
+### 4. Instal Dependensi
+
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Jalankan Aplikasi
+
+```bash
+python app.py
+```
+
+Aplikasi dapat diakses melalui: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+---
+
+## 🧠 Cara Kerja Algoritma Auto-Enhance
+
+### Analisis Gambar (`utils/analysis.py`):
+
+- **Noise:** Gaussian blur subtraction untuk estimasi deviasi standar.
+- **Warna:** Deteksi color cast melalui deviasi kanal RGB.
+- **Kecerahan & Kontras:** Histogram untuk deteksi rentang dinamis.
+- **Ketajaman:** Varians Laplacian untuk deteksi blur.
+
+### Peningkatan Adaptif (`utils/enhance.py`):
+
+- **White Balance:** Koreksi berdasarkan tingkat color cast.
+- **Denoising:** Pilih metode dan parameter sesuai level noise.
+- **Kecerahan:** Gamma disesuaikan otomatis.
+- **Kontras:** CLAHE dengan parameter adaptif.
+- **Saturasi:** Peningkatan jika warna kurang hidup.
+- **Penajaman:** Disesuaikan tergantung ketajaman & noise.
 
 ---
 
 ## 📁 Struktur Proyek
 
 ```
-
-project/
+pixva/
+├── app.py               # Aplikasi utama Flask
+├── requirements.txt     # Daftar dependensi
+├── .gitignore
 │
-├── app.py # Main Flask app
 ├── utils/
-│ ├── enhance.py # Proses otomatis & manual
-│ └── analysis.py # Analisis karakteristik gambar
+│   ├── analysis.py      # Analisis gambar
+│   └── enhance.py       # Proses peningkatan citra
 │
 ├── static/
-│ ├── uploads/ # Gambar original & hasil
-│ └── js/
-│ └── sliders.js # JS slider control
+│   ├── css/style.css
+│   ├── js/scripts.js
+│   ├── image/
+│   └── uploads/
 │
-├── templates/
-│ └── index.html # Antarmuka HTML utama
-│
-├── README.md
-
+└── templates/
+    ├── index.html
+    └── editor.html
 ```
-
----
-
-## 🚀 Instalasi & Menjalankan
-
-### 1. Clone Repositori
-
-```bash
-git clone https://github.com/namauser/image-enhancement-app.git
-cd image-enhancement-app
-```
-
-### 2. Install Dependencies
-
-Disarankan membuat virtual environment:
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-**Isi `requirements.txt`:**
-
-```txt
-flask
-opencv-python
-numpy
-```
-
-### 3. Jalankan Aplikasi
-
-```bash
-python app.py
-```
-
-Akses di browser: [http://127.0.0.1:5000](http://127.0.0.1:5000)
-
----
-
-## 🧠 Catatan Teknis
-
-- Gambar diproses di server lokal (Flask)
-- Real-time slider pakai fetch API (tanpa reload)
-- Enhancement otomatis **skip** tahapan yang tidak perlu berdasarkan:
-
-  - Varian noise
-  - Histogram kontras
-  - Laplacian blur detection
-  - Saturation metric
-
-- Manual override tetap memungkinkan user kontrol penuh
 
 ---
 
 ## 📜 Lisensi
 
-Proyek ini dilisensikan di bawah MIT License.
+Proyek ini dilisensikan di bawah [MIT License](LICENSE).
